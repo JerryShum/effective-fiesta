@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import z from 'zod';
+import { zValidator } from '@hono/zod-validator';
 
 type Expense = {
    id: number;
@@ -24,18 +26,37 @@ const fakeExpenses: Expense[] = [
    },
 ];
 
+// the structure of the data that we want when someone POSTS to this endpoint (expense)
+const createPostSchema = z.object({
+   title: z.string().min(3).max(100),
+   amount: z.number().int().positive(),
+});
+
 export const expensesRoute = new Hono()
    .get('/', (c) => {
       // getting something from our API
       return c.json({ expenses: fakeExpenses });
    })
-   .post('/', async (c) => {
+   .post('/', zValidator('json', createPostSchema), async (c) => {
       // Posting / sending something to our server via this api endpoint
-      const expense = c.res.json();
+      //@ Using zod and validator, if the data doesnt match the schema that we created, it will throw an error
+      // Validator is a middleware --> its a function that runs before our endpoint function
+      // if the data coming in matches the schema --> then the const expense will have the properties/types that we specified in the schema
+      const expense = await c.req.valid('json');
+      fakeExpenses.push({ ...expense, id: fakeExpenses.length + 1 });
       return c.json(expense);
-   });
-// delete
+   })
+   .get('/:id{[0-9]+}', (c) => {
+      const id = Number.parseInt(c.req.param('id'));
+      const expense = fakeExpenses.find((expense) => expense.id === id);
+
+      if (!expense) {
+         return c.notFound();
+      }
+
+      return c.json({ expense });
+   })
+   .delete('/:id{[0-9]+}', (c) => {});
 // put
 
 //the c parameter is called the context object
-//
