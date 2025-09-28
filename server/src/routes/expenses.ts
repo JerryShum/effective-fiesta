@@ -2,11 +2,16 @@ import { Hono } from 'hono';
 import z from 'zod';
 import { zValidator } from '@hono/zod-validator';
 
-type Expense = {
-   id: number;
-   title: string;
-   amount: number;
-};
+const expenseSchema = z.object({
+   id: z.number().int().positive().min(1),
+   title: z.string().min(3).max(100),
+   amount: z.number().int().positive(),
+});
+
+type Expense = z.infer<typeof expenseSchema>;
+
+// the structure of the data that we want when someone POSTS to this endpoint (expense)
+const createPostSchema = expenseSchema.omit({ id: true });
 
 const fakeExpenses: Expense[] = [
    {
@@ -25,12 +30,6 @@ const fakeExpenses: Expense[] = [
       amount: 200,
    },
 ];
-
-// the structure of the data that we want when someone POSTS to this endpoint (expense)
-const createPostSchema = z.object({
-   title: z.string().min(3).max(100),
-   amount: z.number().int().positive(),
-});
 
 export const expensesRoute = new Hono()
    .get('/', (c) => {
@@ -56,7 +55,21 @@ export const expensesRoute = new Hono()
 
       return c.json({ expense });
    })
-   .delete('/:id{[0-9]+}', (c) => {});
+   .delete('/:id{[0-9]+}', (c) => {
+      const id = Number.parseInt(c.req.param('id'));
+      const expense = fakeExpenses.find((expense) => expense.id === id);
+      if (!expense) {
+         return c.notFound();
+      }
+
+      const index = fakeExpenses.findIndex((expense) => expense.id === id);
+      if (index !== -1) {
+         fakeExpenses.splice(index, 1);
+      }
+      return c.json({
+         expense: expense,
+      });
+   });
 // put
 
 //the c parameter is called the context object
