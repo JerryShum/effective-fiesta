@@ -20,7 +20,7 @@ app.get('/hello', async (c) => {
    return c.json(data, { status: 200 });
 });
 
-app.route('/api/expenses', expensesRoute);
+const apiroutes = app.basePath('/api').route('/expenses', expensesRoute);
 
 //! Server will serve the frontend static files (that we built)
 // if someone types in a URL that doesnt exist, we can serve up the react page meant for hadnling the errors, (instead of a bad looking server 404 page)
@@ -30,3 +30,6 @@ app.get('*', async (c, next) => {
 });
 
 export default app;
+
+// exporting types so we can use them in the frontend
+export type ApiRoutes = typeof apiroutes;

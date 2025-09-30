@@ -9,6 +9,9 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+//! Importing rpc api from lib
+import { api } from "../lib/api";
+
 export const Route = createFileRoute("/")({
   component: Index,
 });
@@ -18,7 +21,7 @@ function Index() {
 
   useEffect(() => {
     async function fetchTotalSpent() {
-      const response = await fetch("/api/expenses/total-spent");
+      const response = await client.api.expenses["total-spent"].$get();
       const data = await response.json();
 
       setTotalSpent(data.totalSpent);
